@@ -1,0 +1,284 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
+import { supabaseClient } from "@/lib/supabaseClient";
+import type { Menu, MenuItem, Order, OrderStatus } from "@/lib/types";
+
+type Snapshot = {
+  menu: Menu;
+  items: MenuItem[];
+  orders: Order[];
+};
+
+const STATUS_FLOW: OrderStatus[] = ["pending", "preparing", "served"];
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Pending",
+  preparing: "Preparing",
+  served: "Served",
+};
+
+export default function AdminPage() {
+  const { adminToken } = useParams<{ adminToken: string }>();
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemCategory, setNewItemCategory] = useState("");
+  const [addingItem, setAddingItem] = useState(false);
+
+  const guestUrl = useMemo(() => {
+    if (!snapshot || typeof window === "undefined") return "";
+    return `${window.location.origin}/m/${snapshot.menu.guest_slug}`;
+  }, [snapshot]);
+
+  const loadSnapshot = useCallback(async () => {
+    const res = await fetch(`/api/admin/${adminToken}`);
+    if (res.status === 404) {
+      setNotFound(true);
+      return;
+    }
+    const data = await res.json();
+    setSnapshot(data);
+  }, [adminToken]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial client-side data fetch on mount
+    loadSnapshot();
+  }, [loadSnapshot]);
+
+  useEffect(() => {
+    const menuId = snapshot?.menu.id;
+    if (!menuId) return;
+
+    const channel = supabaseClient
+      .channel(`admin-orders-${menuId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "orders", filter: `menu_id=eq.${menuId}` },
+        () => loadSnapshot()
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `menu_id=eq.${menuId}` },
+        () => loadSnapshot()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_items", filter: `menu_id=eq.${menuId}` },
+        () => loadSnapshot()
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, [snapshot?.menu.id, loadSnapshot]);
+
+  async function handleAddItem(e: React.FormEvent) {
+    e.preventDefault();
+    if (addingItem || !newItemName.trim()) return;
+    setAddingItem(true);
+    try {
+      await fetch(`/api/admin/${adminToken}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newItemName.trim(), category: newItemCategory.trim() }),
+      });
+      setNewItemName("");
+      setNewItemCategory("");
+      await loadSnapshot();
+    } finally {
+      setAddingItem(false);
+    }
+  }
+
+  async function toggleAvailability(item: MenuItem) {
+    await fetch(`/api/admin/${adminToken}/items/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_available: !item.is_available }),
+    });
+    await loadSnapshot();
+  }
+
+  async function deleteItem(item: MenuItem) {
+    await fetch(`/api/admin/${adminToken}/items/${item.id}`, { method: "DELETE" });
+    await loadSnapshot();
+  }
+
+  async function setOrderStatus(order: Order, status: OrderStatus) {
+    await fetch(`/api/admin/${adminToken}/orders/${order.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    await loadSnapshot();
+  }
+
+  async function copyGuestLink() {
+    await navigator.clipboard.writeText(guestUrl);
+  }
+
+  if (notFound) {
+    return (
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+        <h1 className="text-xl font-semibold">Menu not found</h1>
+        <p className="text-sm text-gray-500">Double check the admin link you were given.</p>
+      </main>
+    );
+  }
+
+  if (!snapshot) {
+    return (
+      <main className="mx-auto flex w-full max-w-lg flex-1 items-center justify-center px-4 py-10">
+        <p className="text-sm text-gray-500">Loading...</p>
+      </main>
+    );
+  }
+
+  const activeOrders = snapshot.orders.filter((o) => o.status !== "served");
+  const servedOrders = snapshot.orders.filter((o) => o.status === "served");
+
+  return (
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-10">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold">{snapshot.menu.name}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-gray-500">Guest link:</span>
+            <code className="rounded bg-gray-100 px-2 py-1">{guestUrl}</code>
+            <button onClick={copyGuestLink} className="text-blue-600 hover:underline">
+              Copy
+            </button>
+          </div>
+        </div>
+        {guestUrl && (
+          <div className="flex flex-col items-center gap-1 self-center sm:self-auto">
+            <QRCodeSVG value={guestUrl} size={112} />
+            <span className="text-xs text-gray-400">Scan to order</span>
+          </div>
+        )}
+      </header>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Orders</h2>
+          <button onClick={loadSnapshot} className="text-sm text-blue-600 hover:underline">
+            Refresh
+          </button>
+        </div>
+
+        {activeOrders.length === 0 && servedOrders.length === 0 && (
+          <p className="text-sm text-gray-500">No orders yet.</p>
+        )}
+
+        <div className="flex flex-col gap-3">
+          {activeOrders.map((order) => (
+            <OrderCard key={order.id} order={order} onSetStatus={setOrderStatus} />
+          ))}
+        </div>
+
+        {servedOrders.length > 0 && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-sm text-gray-500">
+              Served orders ({servedOrders.length})
+            </summary>
+            <div className="mt-2 flex flex-col gap-3">
+              {servedOrders.map((order) => (
+                <OrderCard key={order.id} order={order} onSetStatus={setOrderStatus} />
+              ))}
+            </div>
+          </details>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Menu items</h2>
+
+        <div className="flex flex-col gap-2">
+          {snapshot.items.length === 0 && (
+            <p className="text-sm text-gray-500">No items yet. Add your first one below.</p>
+          )}
+          {snapshot.items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-medium ${!item.is_available ? "text-gray-400 line-through" : ""}`}>
+                  {item.name}
+                </p>
+                {item.category && <p className="text-xs text-gray-500">{item.category}</p>}
+              </div>
+              <div className="flex shrink-0 items-center gap-3 text-sm">
+                <button onClick={() => toggleAvailability(item)} className="text-blue-600 hover:underline">
+                  {item.is_available ? "Mark 86'd" : "Mark available"}
+                </button>
+                <button onClick={() => deleteItem(item)} className="text-red-600 hover:underline">
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleAddItem} className="flex gap-2">
+          <input
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="Item name"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <input
+            value={newItemCategory}
+            onChange={(e) => setNewItemCategory(e.target.value)}
+            placeholder="Category"
+            className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={addingItem}
+            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Add
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function OrderCard({
+  order,
+  onSetStatus,
+}: {
+  order: Order;
+  onSetStatus: (order: Order, status: OrderStatus) => void;
+}) {
+  const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1];
+
+  return (
+    <div className="rounded-md border border-gray-200 px-3 py-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">{order.guest_name}</p>
+        <span className="text-xs text-gray-500">{STATUS_LABEL[order.status]}</span>
+      </div>
+      <ul className="mt-1 text-sm text-gray-700">
+        {order.order_items.map((oi) => (
+          <li key={oi.id}>
+            {oi.quantity}&times; {oi.item_name}
+          </li>
+        ))}
+      </ul>
+      {nextStatus && (
+        <button
+          onClick={() => onSetStatus(order, nextStatus)}
+          className="mt-2 rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white"
+        >
+          Mark {STATUS_LABEL[nextStatus]}
+        </button>
+      )}
+    </div>
+  );
+}
