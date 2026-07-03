@@ -131,7 +131,7 @@ export default function AdminPage() {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
         <h1 className="text-xl font-semibold">Menu not found</h1>
-        <p className="text-sm text-gray-500">Double check the admin link you were given.</p>
+        <p className="text-sm text-muted">Double check the admin link you were given.</p>
       </main>
     );
   }
@@ -139,7 +139,7 @@ export default function AdminPage() {
   if (!snapshot) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 items-center justify-center px-4 py-10">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-muted">Loading...</p>
       </main>
     );
   }
@@ -153,9 +153,9 @@ export default function AdminPage() {
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold">{snapshot.menu.name}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-gray-500">Guest link:</span>
-            <code className="rounded bg-gray-100 px-2 py-1">{guestUrl}</code>
-            <button onClick={copyGuestLink} className="text-blue-600 hover:underline">
+            <span className="text-muted">Guest link:</span>
+            <code className="rounded bg-border-soft px-2 py-1">{guestUrl}</code>
+            <button onClick={copyGuestLink} className="text-link hover:text-link-hover hover:underline">
               Copy
             </button>
           </div>
@@ -163,7 +163,7 @@ export default function AdminPage() {
         {guestUrl && (
           <div className="flex flex-col items-center gap-1 self-center sm:self-auto">
             <QRCodeSVG value={guestUrl} size={112} />
-            <span className="text-xs text-gray-400">Scan to order</span>
+            <span className="text-xs text-muted">Scan to order</span>
           </div>
         )}
       </header>
@@ -171,13 +171,13 @@ export default function AdminPage() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Orders</h2>
-          <button onClick={loadSnapshot} className="text-sm text-blue-600 hover:underline">
+          <button onClick={loadSnapshot} className="text-sm text-link hover:text-link-hover hover:underline">
             Refresh
           </button>
         </div>
 
         {activeOrders.length === 0 && servedOrders.length === 0 && (
-          <p className="text-sm text-gray-500">No orders yet.</p>
+          <p className="text-sm text-muted">No orders yet.</p>
         )}
 
         <div className="flex flex-col gap-3">
@@ -193,7 +193,7 @@ export default function AdminPage() {
 
         {servedOrders.length > 0 && (
           <details className="mt-2">
-            <summary className="cursor-pointer text-sm text-gray-500">
+            <summary className="cursor-pointer text-sm text-muted">
               Served orders ({servedOrders.length})
             </summary>
             <div className="mt-2 flex flex-col gap-3">
@@ -215,24 +215,24 @@ export default function AdminPage() {
 
         <div className="flex flex-col gap-2">
           {snapshot.items.length === 0 && (
-            <p className="text-sm text-gray-500">No items yet. Add your first one below.</p>
+            <p className="text-sm text-muted">No items yet. Add your first one below.</p>
           )}
           {snapshot.items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2"
+              className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
             >
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium ${!item.is_available ? "text-gray-400 line-through" : ""}`}>
+                <p className={`text-sm font-medium ${!item.is_available ? "text-muted line-through" : ""}`}>
                   {item.name}
                 </p>
-                {item.category && <p className="text-xs text-gray-500">{item.category}</p>}
+                {item.category && <p className="text-xs text-muted">{item.category}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-3 text-sm">
-                <button onClick={() => toggleAvailability(item)} className="text-blue-600 hover:underline">
+                <button onClick={() => toggleAvailability(item)} className="text-link hover:text-link-hover hover:underline">
                   {item.is_available ? "Mark 86'd" : "Mark available"}
                 </button>
-                <button onClick={() => deleteItem(item)} className="text-red-600 hover:underline">
+                <button onClick={() => deleteItem(item)} className="text-danger hover:underline">
                   Delete
                 </button>
               </div>
@@ -245,18 +245,18 @@ export default function AdminPage() {
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             placeholder="Item name"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-base"
+            className="flex-1 rounded-md border border-border bg-white px-3 py-2 text-base"
           />
           <input
             value={newItemCategory}
             onChange={(e) => setNewItemCategory(e.target.value)}
             placeholder="Category"
-            className="w-28 rounded-md border border-gray-300 px-3 py-2 text-base"
+            className="w-28 rounded-md border border-border bg-white px-3 py-2 text-base"
           />
           <button
             type="submit"
             disabled={addingItem}
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
             Add
           </button>
@@ -278,12 +278,12 @@ function OrderCard({
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1];
 
   return (
-    <div className="rounded-md border border-gray-200 px-3 py-2">
+    <div className="rounded-md border border-border px-3 py-2">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">{order.guest_name}</p>
-        <span className="text-xs text-gray-500">{STATUS_LABEL[order.status]}</span>
+        <span className="text-xs text-muted">{STATUS_LABEL[order.status]}</span>
       </div>
-      <ul className="mt-1 text-sm text-gray-700">
+      <ul className="mt-1 text-sm text-foreground/80">
         {order.order_items.map((oi) => (
           <li key={oi.id}>
             {oi.quantity}&times; {oi.item_name}
@@ -294,7 +294,7 @@ function OrderCard({
         <button
           onClick={() => onSetStatus(order, nextStatus)}
           disabled={isUpdating}
-          className="mt-2 rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-transform active:scale-95 active:bg-gray-700 disabled:opacity-60"
+          className="mt-2 rounded-md bg-secondary px-3 py-1 text-xs font-medium text-accent-foreground transition-transform hover:bg-secondary-hover active:scale-95 active:bg-secondary-hover disabled:opacity-60"
         >
           {isUpdating ? "Updating..." : `Mark ${STATUS_LABEL[nextStatus]}`}
         </button>

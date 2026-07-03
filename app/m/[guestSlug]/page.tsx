@@ -161,7 +161,7 @@ export default function GuestMenuPage() {
   if (loading) {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 items-center justify-center px-4 py-10">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-muted">Loading...</p>
       </main>
     );
   }
@@ -170,7 +170,7 @@ export default function GuestMenuPage() {
     return (
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
         <h1 className="text-xl font-semibold">Menu not found</h1>
-        <p className="text-sm text-gray-500">Double check the link you were given.</p>
+        <p className="text-sm text-muted">Double check the link you were given.</p>
       </main>
     );
   }
@@ -180,7 +180,7 @@ export default function GuestMenuPage() {
       <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-4 py-10">
         <div className="text-center">
           <h1 className="text-2xl font-semibold">{menuName}</h1>
-          <p className="mt-1 text-sm text-gray-500">What&apos;s your name?</p>
+          <p className="mt-1 text-sm text-muted">What&apos;s your name?</p>
         </div>
         <form onSubmit={handleJoin} className="flex flex-col gap-3">
           <input
@@ -188,12 +188,12 @@ export default function GuestMenuPage() {
             onChange={(e) => setNameInput(e.target.value)}
             placeholder="Your name"
             autoFocus
-            className="rounded-md border border-gray-300 px-3 py-2 text-base"
+            className="rounded-md border border-border bg-white px-3 py-2 text-base"
           />
           <button
             type="submit"
             disabled={joining}
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
             {joining ? "Joining..." : "Continue"}
           </button>
@@ -209,9 +209,9 @@ export default function GuestMenuPage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{menuName}</h1>
-          <p className="text-sm text-gray-500">Hi, {displayName}</p>
+          <p className="text-sm text-muted">Hi, {displayName}</p>
         </div>
-        <button onClick={notYou} className="text-xs text-gray-400 hover:underline">
+        <button onClick={notYou} className="text-xs text-muted hover:underline">
           Not you?
         </button>
       </header>
@@ -219,7 +219,7 @@ export default function GuestMenuPage() {
       <section className="flex flex-col gap-6">
         {categories.map((category) => (
           <div key={category} className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
               {category}
             </h2>
             {items
@@ -227,25 +227,25 @@ export default function GuestMenuPage() {
               .map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{item.name}</p>
                     {item.description && (
-                      <p className="text-xs text-gray-500">{item.description}</p>
+                      <p className="text-xs text-muted">{item.description}</p>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={() => updateCartQuantity(item.id, -1)}
-                      className="h-9 w-9 shrink-0 rounded-full border border-gray-300 text-base active:bg-gray-100"
+                      className="h-9 w-9 shrink-0 rounded-full border border-border bg-white text-base active:bg-border-soft"
                     >
                       -
                     </button>
                     <span className="w-4 text-center text-sm">{cart[item.id] ?? 0}</span>
                     <button
                       onClick={() => updateCartQuantity(item.id, 1)}
-                      className="h-9 w-9 shrink-0 rounded-full border border-gray-300 text-base active:bg-gray-100"
+                      className="h-9 w-9 shrink-0 rounded-full border border-border bg-white text-base active:bg-border-soft"
                     >
                       +
                     </button>
@@ -254,27 +254,27 @@ export default function GuestMenuPage() {
               ))}
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-gray-500">No items on the menu yet.</p>}
+        {items.length === 0 && <p className="text-sm text-muted">No items on the menu yet.</p>}
       </section>
 
       {orders.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Your orders</h2>
-            <button onClick={loadOwnOrders} className="text-sm text-blue-600 hover:underline">
+            <button onClick={loadOwnOrders} className="text-sm text-link hover:text-link-hover hover:underline">
               Refresh
             </button>
           </div>
           <div className="flex flex-col gap-2">
             {orders.map((order) => (
-              <div key={order.id} className="rounded-md border border-gray-200 px-3 py-2">
+              <div key={order.id} className="rounded-md border border-border px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted">
                     {new Date(order.created_at).toLocaleTimeString()}
                   </span>
                   <span className="text-xs font-medium">{STATUS_LABEL[order.status]}</span>
                 </div>
-                <ul className="mt-1 text-sm text-gray-700">
+                <ul className="mt-1 text-sm text-foreground/80">
                   {order.order_items.map((oi) => (
                     <li key={oi.id}>
                       {oi.quantity}&times; {oi.item_name}
@@ -288,13 +288,13 @@ export default function GuestMenuPage() {
       )}
 
       {cartCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-gray-200 bg-white px-4 py-3">
+        <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white px-4 py-3">
           <div className="mx-auto flex w-full max-w-lg items-center justify-between">
             <span className="text-sm">{cartCount} item(s) selected</span>
             <button
               onClick={placeOrder}
               disabled={placingOrder}
-              className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {placingOrder ? "Placing..." : "Place order"}
             </button>

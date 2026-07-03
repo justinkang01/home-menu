@@ -63,7 +63,7 @@ export default function Home() {
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 py-10">
       <div className="text-center">
         <h1 className="text-2xl font-semibold">home-menu</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-muted">
           Set up a menu for your home cafe. Share it with guests so they can order.
         </p>
       </div>
@@ -78,7 +78,7 @@ export default function Home() {
             value={menuName}
             onChange={(e) => setMenuName(e.target.value)}
             placeholder="Saturday Morning Cafe"
-            className="rounded-md border border-gray-300 px-3 py-2 text-base"
+            className="rounded-md border border-border bg-white px-3 py-2 text-base"
           />
         </div>
 
@@ -90,19 +90,19 @@ export default function Home() {
                 value={item.name}
                 onChange={(e) => updateItem(index, "name", e.target.value)}
                 placeholder="Item name"
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-base"
+                className="flex-1 rounded-md border border-border bg-white px-3 py-2 text-base"
               />
               <input
                 value={item.category}
                 onChange={(e) => updateItem(index, "category", e.target.value)}
                 placeholder="Category"
-                className="w-28 rounded-md border border-gray-300 px-3 py-2 text-base"
+                className="w-28 rounded-md border border-border bg-white px-3 py-2 text-base"
               />
               {items.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeItemRow(index)}
-                  className="px-2 text-sm text-gray-400 hover:text-gray-600"
+                  className="px-2 text-sm text-muted hover:text-foreground"
                   aria-label="Remove item"
                 >
                   &times;
@@ -113,18 +113,18 @@ export default function Home() {
           <button
             type="button"
             onClick={addItemRow}
-            className="self-start text-sm text-blue-600 hover:underline"
+            className="self-start text-sm text-link hover:text-link-hover hover:underline"
           >
             + Add another item
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
         >
           {submitting ? "Creating..." : "Create menu"}
         </button>
