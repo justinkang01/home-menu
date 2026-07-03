@@ -26,6 +26,7 @@ export default function AdminPage() {
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("");
   const [addingItem, setAddingItem] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const guestUrl = useMemo(() => {
     if (!snapshot || typeof window === "undefined") return "";
@@ -108,12 +109,18 @@ export default function AdminPage() {
   }
 
   async function setOrderStatus(order: Order, status: OrderStatus) {
-    await fetch(`/api/admin/${adminToken}/orders/${order.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    await loadSnapshot();
+    if (updatingOrderId) return;
+    setUpdatingOrderId(order.id);
+    try {
+      await fetch(`/api/admin/${adminToken}/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await loadSnapshot();
+    } finally {
+      setUpdatingOrderId(null);
+    }
   }
 
   async function copyGuestLink() {
@@ -175,7 +182,12 @@ export default function AdminPage() {
 
         <div className="flex flex-col gap-3">
           {activeOrders.map((order) => (
-            <OrderCard key={order.id} order={order} onSetStatus={setOrderStatus} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              onSetStatus={setOrderStatus}
+              isUpdating={updatingOrderId === order.id}
+            />
           ))}
         </div>
 
@@ -186,7 +198,12 @@ export default function AdminPage() {
             </summary>
             <div className="mt-2 flex flex-col gap-3">
               {servedOrders.map((order) => (
-                <OrderCard key={order.id} order={order} onSetStatus={setOrderStatus} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onSetStatus={setOrderStatus}
+                  isUpdating={updatingOrderId === order.id}
+                />
               ))}
             </div>
           </details>
@@ -228,13 +245,13 @@ export default function AdminPage() {
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             placeholder="Item name"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-base"
           />
           <input
             value={newItemCategory}
             onChange={(e) => setNewItemCategory(e.target.value)}
             placeholder="Category"
-            className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-28 rounded-md border border-gray-300 px-3 py-2 text-base"
           />
           <button
             type="submit"
@@ -252,9 +269,11 @@ export default function AdminPage() {
 function OrderCard({
   order,
   onSetStatus,
+  isUpdating,
 }: {
   order: Order;
   onSetStatus: (order: Order, status: OrderStatus) => void;
+  isUpdating: boolean;
 }) {
   const nextStatus = STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1];
 
@@ -274,9 +293,10 @@ function OrderCard({
       {nextStatus && (
         <button
           onClick={() => onSetStatus(order, nextStatus)}
-          className="mt-2 rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white"
+          disabled={isUpdating}
+          className="mt-2 rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-transform active:scale-95 active:bg-gray-700 disabled:opacity-60"
         >
-          Mark {STATUS_LABEL[nextStatus]}
+          {isUpdating ? "Updating..." : `Mark ${STATUS_LABEL[nextStatus]}`}
         </button>
       )}
     </div>

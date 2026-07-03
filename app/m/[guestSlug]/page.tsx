@@ -188,7 +188,7 @@ export default function GuestMenuPage() {
             onChange={(e) => setNameInput(e.target.value)}
             placeholder="Your name"
             autoFocus
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-gray-300 px-3 py-2 text-base"
           />
           <button
             type="submit"

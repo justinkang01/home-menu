@@ -78,7 +78,7 @@ export default function Home() {
             value={menuName}
             onChange={(e) => setMenuName(e.target.value)}
             placeholder="Saturday Morning Cafe"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-gray-300 px-3 py-2 text-base"
           />
         </div>
 
@@ -90,13 +90,13 @@ export default function Home() {
                 value={item.name}
                 onChange={(e) => updateItem(index, "name", e.target.value)}
                 placeholder="Item name"
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-base"
               />
               <input
                 value={item.category}
                 onChange={(e) => updateItem(index, "category", e.target.value)}
                 placeholder="Category"
-                className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-28 rounded-md border border-gray-300 px-3 py-2 text-base"
               />
               {items.length > 1 && (
                 <button
