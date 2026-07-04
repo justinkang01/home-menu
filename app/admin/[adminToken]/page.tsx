@@ -124,12 +124,18 @@ export default function AdminPage() {
 
   async function saveEditItem(item: MenuItem) {
     if (savingEdit || !editName.trim()) return;
+    const trimmedName = editName.trim();
+    const trimmedCategory = editCategory.trim();
+    if (trimmedName === item.name && trimmedCategory === (item.category ?? "")) {
+      setEditingItemId(null);
+      return;
+    }
     setSavingEdit(true);
     try {
       await fetch(`/api/admin/${adminToken}/items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName.trim(), category: editCategory.trim() }),
+        body: JSON.stringify({ name: trimmedName, category: trimmedCategory }),
       });
       setEditingItemId(null);
       await loadSnapshot();
