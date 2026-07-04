@@ -27,6 +27,10 @@ export default function AdminPage() {
   const [newItemCategory, setNewItemCategory] = useState("");
   const [addingItem, setAddingItem] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const guestUrl = useMemo(() => {
     if (!snapshot || typeof window === "undefined") return "";
@@ -106,6 +110,32 @@ export default function AdminPage() {
   async function deleteItem(item: MenuItem) {
     await fetch(`/api/admin/${adminToken}/items/${item.id}`, { method: "DELETE" });
     await loadSnapshot();
+  }
+
+  function startEditItem(item: MenuItem) {
+    setEditingItemId(item.id);
+    setEditName(item.name);
+    setEditCategory(item.category ?? "");
+  }
+
+  function cancelEditItem() {
+    setEditingItemId(null);
+  }
+
+  async function saveEditItem(item: MenuItem) {
+    if (savingEdit || !editName.trim()) return;
+    setSavingEdit(true);
+    try {
+      await fetch(`/api/admin/${adminToken}/items/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim(), category: editCategory.trim() }),
+      });
+      setEditingItemId(null);
+      await loadSnapshot();
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   async function setOrderStatus(order: Order, status: OrderStatus) {
@@ -217,27 +247,64 @@ export default function AdminPage() {
           {snapshot.items.length === 0 && (
             <p className="text-sm text-muted">No items yet. Add your first one below.</p>
           )}
-          {snapshot.items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium ${!item.is_available ? "text-muted line-through" : ""}`}>
-                  {item.name}
-                </p>
-                {item.category && <p className="text-xs text-muted">{item.category}</p>}
+          {snapshot.items.map((item) =>
+            editingItemId === item.id ? (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
+              >
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveEditItem(item)}
+                  autoFocus
+                  className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1 text-base"
+                />
+                <input
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveEditItem(item)}
+                  placeholder="Category"
+                  className="w-24 shrink-0 rounded-md border border-border bg-white px-2 py-1 text-base"
+                />
+                <div className="flex shrink-0 items-center gap-3 text-sm">
+                  <button
+                    onClick={() => saveEditItem(item)}
+                    disabled={savingEdit}
+                    className="text-link hover:text-link-hover hover:underline disabled:opacity-60"
+                  >
+                    {savingEdit ? "Saving..." : "Save"}
+                  </button>
+                  <button onClick={cancelEditItem} className="text-muted hover:text-foreground">
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-3 text-sm">
-                <button onClick={() => toggleAvailability(item)} className="text-link hover:text-link-hover hover:underline">
-                  {item.is_available ? "Mark 86'd" : "Mark available"}
-                </button>
-                <button onClick={() => deleteItem(item)} className="text-danger hover:underline">
-                  Delete
-                </button>
+            ) : (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium ${!item.is_available ? "text-muted line-through" : ""}`}>
+                    {item.name}
+                  </p>
+                  {item.category && <p className="text-xs text-muted">{item.category}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-3 text-sm">
+                  <button onClick={() => startEditItem(item)} className="text-link hover:text-link-hover hover:underline">
+                    Edit
+                  </button>
+                  <button onClick={() => toggleAvailability(item)} className="text-link hover:text-link-hover hover:underline">
+                    {item.is_available ? "Mark 86'd" : "Mark available"}
+                  </button>
+                  <button onClick={() => deleteItem(item)} className="text-danger hover:underline">
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
 
         <form onSubmit={handleAddItem} className="flex gap-2">
